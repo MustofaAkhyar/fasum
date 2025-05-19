@@ -236,6 +236,37 @@ Future<void> _generateDescriptionWithAI() async {
     }
   }
 
+  Future<void> sendNotificationToTopic(String body, String senderName) async {
+    final url = Uri.parse('https://fasum-cloud-alpha.vercel.app/send-to-topic');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        "topic": "berita-fasum",
+        "title": "🔔 Laporan Baru",
+        "body": body,
+        "senderName": senderName,
+        "senderPhotoUrl": "https://static.vecteezy.com/system/resources/thumbnails/041/642/167/small_2x/ai-generated-portrait-of-handsome-smiling-young-man-with-folded-arms-isolated-free-png.png",
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('✅ Notifikasi berhasil dikirim')),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Gagal kirim notifikasi: ${response.body}')),
+        );
+      }
+    }
+  }
+
   Future<void> _submitPost() async {
     if (_base64Image == null || _descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -276,6 +307,8 @@ Future<void> _generateDescriptionWithAI() async {
       });
 
       if (!mounted) return;
+
+      sendNotificationToTopic(_descriptionController.text, fullName);
 
       Navigator.pop(context);
       ScaffoldMessenger.of(
@@ -367,10 +400,7 @@ Future<void> _generateDescriptionWithAI() async {
                         ),
               ),
             ),
-
             SizedBox(height: 16),
-
-            // Efek shimmer saat generating
             if (_isGenerating)
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
